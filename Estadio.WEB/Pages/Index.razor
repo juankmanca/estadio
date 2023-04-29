@@ -1,0 +1,185 @@
+﻿@page "/"
+@inject HttpClient httpClient
+@inject IRepository _repository
+@inject SweetAlertService sweetAlertService;
+@using CurrieTechnologies.Razor.SweetAlert2;
+@using Estadio.Shared.Entities;
+@using Estadio.web.Repositories;
+
+<div class="container">
+    <h1>¡Valida tu Voleta!</h1>
+    <div>
+        <input type="number" @bind-value="IdBoleta" placeholder="Ingresa el ID de la boleta" />
+        <button class="ms-3" @onclick="ValidarBoleta">Validar boleta</button>
+    </div>
+</div>
+@if (Ticket is not null)
+{
+    <div class="form">
+        <div class="form-header">
+            <h2>Información de la Voleta</h2>
+        </div>
+        <form class="campos mb-3">
+            <div class="form-group">
+                <label for="Id">ID</label>
+                <input class="form-control" type="number" @bind-value="Ticket.Id" id="Id" required disabled />
+            </div>
+            <div class="form-group">
+                <label for="UsedDate">Fecha de uso</label>
+                @if (Ticket.UsedDate is not null)
+                {
+                    <input class="form-control" type="datetime-local" @bind-value="Ticket.UsedDate" id="UsedDate" disabled />
+
+                }
+                else
+                {
+                    <input class="form-control" type="datetime-local" @bind-value="Ticket.UsedDate" id="UsedDate" />
+                }
+            </div>
+            <div class="form-group">
+                <label for="used">Usado</label> <br />
+                @if (Ticket.used)
+                {
+                    <img src="images/ck.jpg" width="40" height="40" />
+                }
+                else
+                {
+                    <img src="images/x.jpg" width="40" height="40" />
+                }
+            </div>
+            <div class="form-group">
+                <label for="port">Porteria</label>
+                @if (Ticket.port is not null)
+                {
+                    <input class="form-control" type="text" @bind-value="Ticket.port" id="UsedDate" disabled />
+
+                }
+                else
+                {
+                    <select class="form-control" @bind="Ticket.port" id="port">
+                        <option value="">Selecciona un puerto</option>
+                        <option value="Norte">Norte</option>
+                        <option value="Sur">Sur</option>
+                        <option value="Oriental">Oriental</option>
+                        <option value="Occidental">Occidental</option>
+                    </select>
+                }
+
+            </div>
+        </form>
+        <button type="submit" class="btn btn-primary" @onclick="EnviarTicket">Enviar</button>
+    </div>
+}
+
+
+<div class="background-image"></div>
+
+@code {
+    private string IdBoleta;
+    private Ticket? Ticket;
+
+    private async Task ValidarBoleta()
+    {
+        var response = await _repository.Get<Ticket>($"https://localhost:7151/api/tickets/Validate/{IdBoleta}");
+        if (!response.Error)
+        {
+            Ticket = response.Response;
+        }
+        else
+        {
+            var message = await response.GetErrorMessageAsync();
+            await sweetAlertService.FireAsync("Error", message, SweetAlertIcon.Error);
+            return;
+        }
+        // Aquí puedes manejar la respuesta como necesites
+    }
+
+    private async Task EnviarTicket()
+    {
+        Ticket.used = true;
+        var response = await httpClient.PutAsJsonAsync("https://localhost:7151/api/tickets", Ticket);
+        // Aquí puedes manejar la respuesta como necesites
+    }
+}
+
+<style>
+    .container {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        background-color: rgba(255, 255, 255, 0.9);
+        border-radius: 10px;
+        width: 500px;
+        height: 300px;
+        margin: auto;
+        margin-top: 50px;
+        padding: 20px;
+    }
+
+    .form {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        background-color: rgba(255, 255, 255, 1);
+        border-radius: 10px;
+        width: 600px;
+        height: 300px;
+        margin: auto;
+        margin-top: 50px;
+        padding: 20px;
+    }
+
+    input {
+        padding: 10px;
+        border: 1px solid #ccc;
+        border-radius: 5px;
+        font-size: 16px;
+        margin-bottom: 10px;
+    }
+
+    button {
+        padding: 10px 20px;
+        background-color: #4CAF50;
+        color: white;
+        border: none;
+        border-radius: 5px;
+        font-size: 16px;
+        cursor: pointer;
+    }
+
+        button:hover {
+            background-color: #3e8e41;
+        }
+
+    .background-image {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        z-index: -1;
+        background-image: url("./images/st.jpg");
+        background-size: cover;
+        background-repeat: no-repeat;
+        opacity: 0.5;
+    }
+
+    .form-group {
+        width: 250px;
+        margin: 10px;
+        text-align: center;
+    }
+
+    .campos {
+        display: flex;
+        flex-direction: row;
+        flex-wrap: wrap;
+    }
+
+    h1 {
+        margin-bottom: 30px;
+    }
+
+</style>
